@@ -50,6 +50,28 @@ func getImageFiles(dirPath string) []string {
 	return imageFiles
 }
 
+// Funcion para seleccionar n imagenes sin que se repitan
+func selectNImages(imageFiles []string, cantidad int) []string {
+	var imagesSelected []string
+	for i := 0; len(imagesSelected) < cantidad; i++ {
+		imagen := getRandomImage(imageFiles)
+		if !stringInArray(imagesSelected, imagen) {
+			imagesSelected = append(imagesSelected, imagen)
+		}
+	}
+	return imagesSelected
+}
+
+// Funcion para verificar si un string ya existe en un arreglo de string
+func stringInArray(arr []string, str string) bool {
+	for _, v := range arr { // Recorre cada elemento del arreglo
+		if v == str { // Compara el valor actual con la cadena
+			return true // Si la encuentra, retorna true
+		}
+	}
+	return false // Si no la encuentra, retorna false
+}
+
 // Función para seleccionar una imagen al azar
 func getRandomImage(imageFiles []string) string {
 	randomIndex := rand.Intn(len(imageFiles))
@@ -89,15 +111,20 @@ func main() {
 	}
 
 	// Seleccionar una imagen al azar
-	randomImage := getRandomImage(imageFiles)
-	fmt.Printf("Imagen seleccionada al azar: %s\n", randomImage)
+	// randomImage := getRandomImage(imageFiles)
+	// fmt.Printf("Imagen seleccionada al azar: %s\n", randomImage)
 
 	// Codificar la imagen seleccionada en Base64
-	imagePath := filepath.Join(*dirPath, randomImage)
-	encodedImage := encodeImageToBase64(imagePath)
+	// imagePath := filepath.Join(*dirPath, randomImage)
+	// encodedImage := encodeImageToBase64(imagePath)
 
 	// Imprimir la imagen codificada en Base64
-	fmt.Println("Imagen codificada en Base64:")
-	fmt.Println(encodedImage)
+	// fmt.Println("Imagen codificada en Base64:")
+	// fmt.Println(encodedImage)
+
+	imagenes := selectNImages(imageFiles, 3)
+	for _, image := range imagenes {
+		fmt.Println(image)
+	}
 
 }
