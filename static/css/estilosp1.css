@@ -1,0 +1,32 @@
+body{
+    padding: 25px;
+    margin: 0;
+}
+
+header{
+    margin-bottom: 25px;
+}
+
+#columna-centrada{
+    display: flex;
+    justify-content: center;
+}
+
+.card{
+    margin: 20px 0;
+}
+
+.card img {
+    max-width: 18rem;
+    max-height: 17rem;
+    object-fit: cover; /* Mantiene la proporción, recorta si es necesario */
+}
+
+.footer{
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    padding: 25px;
+}
