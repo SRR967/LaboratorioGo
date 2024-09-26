@@ -3,14 +3,28 @@ package main
 import (
 	"encoding/base64"
 	"flag"
-	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
+
+// Estructura que contiene la información de cada imagen
+type ImageData struct {
+	Base64 template.URL // URL amigable para HTML
+	Name   string
+}
+
+// Datos para pasar a la plantilla
+type PageData struct {
+	HostName string
+	Images   []ImageData
+	Theme    string
+}
 
 // Función para obtener el nombre del host
 func getHostName() string {
@@ -34,46 +48,51 @@ func isImage(fileName string) bool {
 	return false
 }
 
-// Función para leer las imágenes de un directorio
-func getImageFiles(dirPath string) []string {
+// Función para leer las imágenes de un directorio y devolverlas codificadas en Base64
+func getImageFiles(dirPath string) []ImageData {
 	files, err := ioutil.ReadDir(dirPath)
 	if err != nil {
 		log.Fatal("Error leyendo el directorio:", err)
 	}
 
-	var imageFiles []string
+	var imageFiles []ImageData
 	for _, file := range files {
 		if !file.IsDir() && isImage(file.Name()) {
-			imageFiles = append(imageFiles, file.Name())
+			imagePath := filepath.Join(dirPath, file.Name())
+			encodedImage := encodeImageToBase64(imagePath)
+			imageFiles = append(imageFiles, ImageData{
+				Base64: template.URL("data:image/jpeg;base64," + encodedImage), // Aquí usamos el formato adecuado para imágenes Base64
+				Name:   file.Name(),
+			})
 		}
 	}
 	return imageFiles
 }
 
-// Funcion para seleccionar n imagenes sin que se repitan
-func selectNImages(imageFiles []string, cantidad int) []string {
-	var imagesSelected []string
-	for i := 0; len(imagesSelected) < cantidad; i++ {
+// Función para seleccionar n imágenes sin que se repitan
+func selectNImages(imageFiles []ImageData, cantidad int) []ImageData {
+	var imagesSelected []ImageData
+	for len(imagesSelected) < cantidad {
 		imagen := getRandomImage(imageFiles)
-		if !stringInArray(imagesSelected, imagen) {
+		if !imageInArray(imagesSelected, imagen) {
 			imagesSelected = append(imagesSelected, imagen)
 		}
 	}
 	return imagesSelected
 }
 
-// Funcion para verificar si un string ya existe en un arreglo de string
-func stringInArray(arr []string, str string) bool {
-	for _, v := range arr { // Recorre cada elemento del arreglo
-		if v == str { // Compara el valor actual con la cadena
-			return true // Si la encuentra, retorna true
+// Función para verificar si una imagen ya existe en un arreglo de ImageData
+func imageInArray(arr []ImageData, img ImageData) bool {
+	for _, v := range arr {
+		if v.Name == img.Name {
+			return true
 		}
 	}
-	return false // Si no la encuentra, retorna false
+	return false
 }
 
 // Función para seleccionar una imagen al azar
-func getRandomImage(imageFiles []string) string {
+func getRandomImage(imageFiles []ImageData) ImageData {
 	randomIndex := rand.Intn(len(imageFiles))
 	return imageFiles[randomIndex]
 }
@@ -84,14 +103,30 @@ func encodeImageToBase64(imagePath string) string {
 	if err != nil {
 		log.Fatal("Error leyendo el archivo de imagen:", err)
 	}
-
-	encodedImage := base64.StdEncoding.EncodeToString(imageData)
-	return encodedImage
+	return base64.StdEncoding.EncodeToString(imageData)
 }
 
-func main() {
-	// Argumento de la línea de comandos para la ruta del directorio
+// Función para seleccionar una plantilla aleatoria
+func randomTemplate() string {
+	templates := []string{"plantilla1.html", "plantilla2.html"}
+	return templates[rand.Intn(len(templates))]
+}
+
+// Función para renderizar la plantilla con imágenes y datos
+func renderTemplate(tmpl string, data PageData, w http.ResponseWriter) {
+	t, err := template.ParseFiles("templates/" + tmpl)
+	if err != nil {
+		log.Fatal("Error cargando la plantilla:", err)
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal("Error renderizando la plantilla:", err)
+	}
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
 	dirPath := flag.String("dir", "", "Directorio que contiene las imágenes")
+	theme := flag.String("theme", "Tema predeterminado", "El tema para la página")
 	flag.Parse()
 
 	// Verificar si se proporcionó un directorio
@@ -99,32 +134,30 @@ func main() {
 		log.Fatal("Debe proporcionar un directorio que contenga las imágenes. Use el flag -dir.")
 	}
 
-	// Obtener y mostrar el nombre del host
-	hostName := getHostName()
-	fmt.Printf("Nombre del host: %s\n", hostName)
-
-	// Obtener la lista de imágenes del directorio
 	imageFiles := getImageFiles(*dirPath)
 	if len(imageFiles) == 0 {
-		fmt.Println("No se encontraron imágenes en la carpeta.")
+		http.Error(w, "No se encontraron imágenes en la carpeta.", http.StatusNotFound)
 		return
 	}
 
-	// Seleccionar una imagen al azar
-	// randomImage := getRandomImage(imageFiles)
-	// fmt.Printf("Imagen seleccionada al azar: %s\n", randomImage)
+	hostName := getHostName()
 
-	// Codificar la imagen seleccionada en Base64
-	// imagePath := filepath.Join(*dirPath, randomImage)
-	// encodedImage := encodeImageToBase64(imagePath)
+	// Selecciona 3 imágenes para mostrar
+	selectedImages := selectNImages(imageFiles, 3)
 
-	// Imprimir la imagen codificada en Base64
-	// fmt.Println("Imagen codificada en Base64:")
-	// fmt.Println(encodedImage)
-
-	imagenes := selectNImages(imageFiles, 3)
-	for _, image := range imagenes {
-		fmt.Println(image)
+	// Estructura que contiene los datos para la plantilla
+	data := PageData{
+		HostName: hostName,
+		Images:   selectedImages,
+		Theme:    *theme,
 	}
+	selectedTemplate := randomTemplate()
 
+	// Renderiza la plantilla
+	renderTemplate(selectedTemplate, data, w)
+}
+
+func main() {
+	http.HandleFunc("/", handler)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
