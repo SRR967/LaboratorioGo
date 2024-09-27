@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Estructura que contiene la información de cada imagen
@@ -112,17 +113,47 @@ func randomTemplate() string {
 	return templates[rand.Intn(len(templates))]
 }
 
+// funcion para seleccionar una carpeta de imagenes aleatoria
+// Y retornar el nombre de la carpeta
+func getRandomSubfolder(dir string) (string, string, error) {
+	// Lee el contenido del directorio
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Filtra las subcarpetas
+	var subfolders []os.FileInfo
+	for _, file := range files {
+		if file.IsDir() {
+			subfolders = append(subfolders, file)
+		}
+	}
+
+	// Verifica si hay subcarpetas disponibles
+	if len(subfolders) == 0 {
+		return "", "", fmt.Errorf("no se encontraron subcarpetas en %s", dir)
+	}
+
+	// Genera un índice aleatorio y selecciona una subcarpeta
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(subfolders))
+
+	// Obtiene la subcarpeta seleccionada
+	subfolder := subfolders[randomIndex]
+	subfolderName := subfolder.Name()
+	subfolderPath := filepath.Join(dir, subfolderName)
+
+	return subfolderPath, subfolderName, nil
+}
+
 // Función para servir la página principal
 func handler(w http.ResponseWriter, r *http.Request) {
 
-	dirPath := "./static/img/"
-	theme := "Gatos"
-	//theme := flag.String("theme", "Tema predeterminado", "El tema para la página")
-
-	// Verificar si se proporcionó un directorio
-	// if *dirPath == "" {
-	// 	log.Fatal("Debe proporcionar un directorio que contenga las imágenes. Use el flag -dir.")
-	// }
+	dirPath, theme, err := getRandomSubfolder("./static/img/")
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
 
 	imageFiles := getImageFiles(dirPath)
 	if len(imageFiles) == 0 {
