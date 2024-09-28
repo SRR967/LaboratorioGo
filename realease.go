@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -197,9 +198,16 @@ func main() {
 	fs := http.FileServer(http.Dir("./static/"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
+	// Definir el flag para el puerto
+	port := flag.String("port", "8080", "El puerto donde se ejecutará la aplicación")
+	flag.Parse()
+
+	// Mensaje indicando el puerto en uso
+	fmt.Printf("Servidor ejecutándose en el puerto %s\n", *port)
+
 	// Iniciar el servidor en el puerto 8080
-	fmt.Println("Servidor web en ejecución en http://localhost:8080")
-	err := http.ListenAndServe(":8080", nil)
+	fmt.Printf("Servidor web en ejecución en http://localhost:%s", *port)
+	err := http.ListenAndServe(":"+*port, nil)
 	if err != nil {
 		fmt.Println("Error al iniciar el servidor:", err)
 	}
