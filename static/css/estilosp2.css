@@ -1,41 +1,73 @@
-body{
+body {
     padding: 25px;
     margin: 0;
+    background-color: #f5f5f5;
+    font-family: 'Arial', sans-serif;
 }
 
-header{
+header {
     margin-bottom: 25px;
 }
 
-#columna-centrada{
-    display: flex;
-    justify-content: center;
+.navbar {
+    background-color: #343a40;
+    padding: 1rem;
 }
 
-.card{
-    margin: 20px 0;
+.navbar-brand h3 {
+    color: #ffffff;
 }
 
-.card img {
-    max-width: 18rem;
-    max-height: 17rem;
-    object-fit: cover; /* Mantiene la proporción, recorta si es necesario */
+#main {
+    margin: 40px 0;
 }
 
-.carousel-inner{
-    padding: 0 25%;
+/* Ajuste de imágenes del carrusel */
+.carousel-item img {
+    max-height: 500px;
+    object-fit: contain; /* Mantener la proporción de la imagen sin recortar */
+    width: auto;
+    margin: 0 auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.carousel-item img{
-    height: 60vh;
-    object-fit: cover;
+/* Personalizar las flechas de control del carrusel */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+    border-radius: 50%;
+    padding: 10px;
 }
 
-.footer{
+.carousel-control-prev-icon {
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 16 16"%3E%3Cpath d="M11.354 1.646a.5.5 0 0 1 0 .708L6.707 6.999l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z"/%3E%3C/svg%3E');
+}
+
+.carousel-control-next-icon {
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" fill="%23fff" viewBox="0 0 16 16"%3E%3Cpath d="M4.646 1.646a.5.5 0 0 1 .708 0l5 5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 0 1-.708-.708L9.293 7 4.646 2.354a.5.5 0 0 1 0-.708z"/%3E%3C/svg%3E');
+}
+
+.footer {
+    background-color: #343a40;
+    color: #ffffff;
+    padding: 20px;
     position: fixed;
     left: 0;
     bottom: 0;
     width: 100%;
     text-align: center;
-    padding: 25px;
+}
+
+.footer h4, .footer h5, .footer p {
+    margin: 0;
+}
+
+.footer .nav-link {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.footer .nav-link:hover {
+    text-decoration: underline;
 }
