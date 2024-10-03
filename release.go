@@ -2,14 +2,13 @@ package main
 
 import (
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,15 +27,8 @@ type PageData struct {
 	Theme    string
 }
 
-// Función para obtener el nombre del host desde una variable de entorno
-func getHostName() string {
-	hostName := os.Getenv("HOSTNAME")
-	if hostName == "" {
-		log.Println("Advertencia: La variable de entorno HOSTNAME no está configurada")
-		hostName = "Desconocido"
-	}
-	return hostName
-}
+// Variable fija para el nombre del host
+var fixedHostName = "MiServidorFijo"
 
 // Función para verificar si un archivo es una imagen
 func isImage(fileName string) bool {
@@ -53,9 +45,10 @@ func isImage(fileName string) bool {
 
 // Función para leer las imágenes de un directorio y devolverlas codificadas en Base64
 func getImageFiles(dirPath string) []ImageData {
-	files, err := ioutil.ReadDir(dirPath)
+	files, err := ioutil.ReadDir(dirPath) // Utilizando ioutil para leer el directorio
 	if err != nil {
-		log.Fatal("Error leyendo el directorio:", err)
+		log.Println("Error leyendo el directorio:", err)
+		return nil // Manejar el error en lugar de detener la ejecución
 	}
 
 	var imageFiles []ImageData
@@ -102,9 +95,10 @@ func getRandomImage(imageFiles []ImageData) ImageData {
 
 // Función para leer y codificar una imagen en Base64
 func encodeImageToBase64(imagePath string) string {
-	imageData, err := ioutil.ReadFile(imagePath)
+	imageData, err := ioutil.ReadFile(imagePath) // Utilizando ioutil para leer archivos
 	if err != nil {
-		log.Fatal("Error leyendo el archivo de imagen:", err)
+		log.Println("Error leyendo el archivo de imagen:", err)
+		return ""
 	}
 	return base64.StdEncoding.EncodeToString(imageData)
 }
@@ -115,17 +109,17 @@ func randomTemplate() string {
 	return templates[rand.Intn(len(templates))]
 }
 
-// funcion para seleccionar una carpeta de imagenes aleatoria
+// Función para seleccionar una carpeta de imágenes aleatoria
 // Y retornar el nombre de la carpeta
 func getRandomSubfolder(dir string) (string, string, error) {
-	// Lee el contenido del directorio
+	// Lee el contenido del directorio utilizando fs.FS para mayor compatibilidad
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return "", "", err
 	}
 
 	// Filtra las subcarpetas
-	var subfolders []os.FileInfo
+	var subfolders []fs.FileInfo
 	for _, file := range files {
 		if file.IsDir() {
 			subfolders = append(subfolders, file)
@@ -154,7 +148,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	dirPath, theme, err := getRandomSubfolder("./static/img/")
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		log.Printf("Error al obtener subcarpeta: %v", err)
+		http.Error(w, "Error al obtener subcarpeta de imágenes.", http.StatusInternalServerError)
+		return
 	}
 
 	imageFiles := getImageFiles(dirPath)
@@ -163,7 +159,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hostName := getHostName()
+	hostName := fixedHostName // Usando la variable fija para el nombre del host
 
 	// Selecciona 3 imágenes para mostrar
 	selectedImages := selectNImages(imageFiles, 3)
@@ -199,16 +195,15 @@ func main() {
 	fs := http.FileServer(http.Dir("./static/"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Definir el flag para el puerto
-	port := flag.String("port", "8080", "El puerto donde se ejecutará la aplicación")
-	flag.Parse()
+	// Usar un puerto fijo (8080) y no solicitar entrada del usuario
+	port := "8080"
 
 	// Mensaje indicando el puerto en uso
-	fmt.Printf("Servidor ejecutándose en el puerto %s\n", *port)
+	fmt.Printf("Servidor ejecutándose en el puerto %s\n", port)
 
 	// Iniciar el servidor en el puerto 8080
-	fmt.Printf("Servidor web en ejecución en http://localhost:%s", *port)
-	err := http.ListenAndServe(":"+*port, nil)
+	fmt.Printf("Servidor web en ejecución en http://localhost:%s", port)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		fmt.Println("Error al iniciar el servidor:", err)
 	}
