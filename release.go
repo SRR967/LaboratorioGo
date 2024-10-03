@@ -154,6 +154,15 @@ func getSubfolder(dir string, theme string) (string, string, error) {
 	}
 }
 
+// Función para obtener el nombre del host
+func getHostName() string {
+	hostName, err := os.Hostname()
+	if err != nil {
+		log.Fatal("Error obteniendo el nombre del host:", err)
+	}
+	return hostName
+}
+
 // Función para servir la página principal
 func handler(imageDir string, theme string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -171,7 +180,7 @@ func handler(imageDir string, theme string) http.HandlerFunc {
 			return
 		}
 
-		hostName := fixedHostName
+		hostName := getHostName()
 
 		// Selecciona 3 imágenes para mostrar
 		selectedImages := selectNImages(imageFiles, 3)
